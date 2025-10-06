@@ -1,6 +1,7 @@
 import { FileText } from 'lucide-react'
+import { InputSectionProps } from '../types'
 
-export default function InputSection({ value, onChange, placeholder }) {
+export default function InputSection({ value, onChange, placeholder }: InputSectionProps): JSX.Element {
   return (
     <div className="bg-white rounded-lg shadow-sm border">
       <div className="px-4 py-3 border-b bg-gray-50">

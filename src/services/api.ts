@@ -1,8 +1,9 @@
-import axios from 'axios'
+import axios, { AxiosError } from 'axios'
+import { RemixType, ClaudeApiResponse, ApiErrorResponse } from '../types'
 
 const API_BASE_URL = import.meta.env.VITE_CLAUDE_API_URL || 'https://api.anthropic.com/v1'
 
-const REMIX_PROMPTS = {
+const REMIX_PROMPTS: Record<RemixType, string> = {
   summarize: "Please summarize the following content in a concise and clear way, highlighting the key points:",
   expand: "Please expand the following content with more detail, examples, and context while maintaining the original meaning:",
   simplify: "Please simplify the following content to make it easier to understand for a general audience, using simpler language:",
@@ -11,11 +12,11 @@ const REMIX_PROMPTS = {
   casual: "Please rewrite the following content in a casual and conversational tone, as if speaking to a friend:"
 }
 
-export const remixContent = async (content, remixType) => {
+export const remixContent = async (content: string, remixType: RemixType): Promise<string> => {
   try {
     const prompt = `${REMIX_PROMPTS[remixType]}\n\n${content}`
     
-    const response = await axios.post(`${API_BASE_URL}/messages`, {
+    const response = await axios.post<ClaudeApiResponse>(`${API_BASE_URL}/messages`, {
       model: 'claude-3-sonnet-20240229',
       max_tokens: 1000,
       messages: [
@@ -36,12 +37,14 @@ export const remixContent = async (content, remixType) => {
   } catch (error) {
     console.error('API Error:', error)
     
-    if (error.response?.status === 401) {
+    const axiosError = error as AxiosError<ApiErrorResponse>
+    
+    if (axiosError.response?.status === 401) {
       throw new Error('Invalid API key. Please check your Claude API key.')
-    } else if (error.response?.status === 429) {
+    } else if (axiosError.response?.status === 429) {
       throw new Error('Rate limit exceeded. Please try again later.')
-    } else if (error.response?.data?.error) {
-      throw new Error(error.response.data.error.message || 'API Error occurred')
+    } else if (axiosError.response?.data?.error) {
+      throw new Error(axiosError.response.data.error.message || 'API Error occurred')
     } else {
       throw new Error('Failed to remix content. Please try again.')
     }
@@ -49,11 +52,11 @@ export const remixContent = async (content, remixType) => {
 }
 
 // Mock function for development/testing
-export const mockRemixContent = async (content, remixType) => {
+export const mockRemixContent = async (content: string, remixType: RemixType): Promise<string> => {
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 2000))
   
-  const mockResponses = {
+  const mockResponses: Record<RemixType, string> = {
     summarize: `Here's a summary of your content:\n\nKey points:\n• ${content.slice(0, 50)}...\n• Main theme: Content transformation\n• Purpose: Information processing\n\nThis summary captures the essential information in a concise format.`,
     
     expand: `Here's an expanded version of your content with more detail:\n\nOriginal: ${content}\n\nExpanded with context:\n• Background information that provides additional context\n• Examples that illustrate the main points\n• Related concepts that enhance understanding\n• Detailed explanations that clarify complex ideas\n\nThis expanded version offers comprehensive information while maintaining clarity.`,

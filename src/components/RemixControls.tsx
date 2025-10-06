@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Sparkles, Trash2, Copy, Download } from 'lucide-react'
+import { RemixControlsProps, RemixType, RemixTypeConfig } from '../types'
 
-const REMIX_TYPES = [
+const REMIX_TYPES: RemixTypeConfig[] = [
   { id: 'summarize', label: 'Summarize', description: 'Create a concise summary' },
   { id: 'expand', label: 'Expand', description: 'Add more detail and context' },
   { id: 'simplify', label: 'Simplify', description: 'Make it easier to understand' },
@@ -18,10 +19,10 @@ export default function RemixControls({
   isLoading, 
   hasOutput,
   disabled 
-}) {
-  const [selectedType, setSelectedType] = useState('summarize')
+}: RemixControlsProps): JSX.Element {
+  const [selectedType, setSelectedType] = useState<RemixType>('summarize')
 
-  const handleRemix = () => {
+  const handleRemix = (): void => {
     onRemix(selectedType)
   }
 
@@ -33,7 +34,7 @@ export default function RemixControls({
         </label>
         <select
           value={selectedType}
-          onChange={(e) => setSelectedType(e.target.value)}
+          onChange={(e) => setSelectedType(e.target.value as RemixType)}
           className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none"
         >
           {REMIX_TYPES.map((type) => (

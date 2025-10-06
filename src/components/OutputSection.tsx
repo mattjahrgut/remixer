@@ -1,6 +1,7 @@
 import { FileText, Loader2, AlertCircle, CheckCircle } from 'lucide-react'
+import { OutputSectionProps } from '../types'
 
-export default function OutputSection({ output, isLoading, error }) {
+export default function OutputSection({ output, isLoading, error }: OutputSectionProps): JSX.Element {
   return (
     <div className="bg-white rounded-lg shadow-sm border">
       <div className="px-4 py-3 border-b bg-gray-50">

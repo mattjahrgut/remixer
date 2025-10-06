@@ -4,14 +4,15 @@ import InputSection from './components/InputSection'
 import OutputSection from './components/OutputSection'
 import RemixControls from './components/RemixControls'
 import { remixContent, mockRemixContent } from './services/api'
+import { RemixType } from './types'
 
-function App() {
-  const [inputText, setInputText] = useState('')
-  const [outputText, setOutputText] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState('')
+function App(): JSX.Element {
+  const [inputText, setInputText] = useState<string>('')
+  const [outputText, setOutputText] = useState<string>('')
+  const [isLoading, setIsLoading] = useState<boolean>(false)
+  const [error, setError] = useState<string>('')
 
-  const handleRemix = async (remixType) => {
+  const handleRemix = async (remixType: RemixType): Promise<void> => {
     if (!inputText.trim()) {
       setError('Please enter some text to remix')
       return
@@ -36,19 +37,20 @@ function App() {
     } catch (err) {
       // Log the full error for debugging
       console.error('Full error:', err)
-      setError(err.message || 'Failed to remix content')
+      const errorMessage = err instanceof Error ? err.message : 'Failed to remix content'
+      setError(errorMessage)
     } finally {
       setIsLoading(false)
     }
   }
 
-  const handleClear = () => {
+  const handleClear = (): void => {
     setInputText('')
     setOutputText('')
     setError('')
   }
 
-  const handleCopy = () => {
+  const handleCopy = (): void => {
     if (outputText) {
       navigator.clipboard.writeText(outputText)
       // You could add a toast notification here
@@ -56,7 +58,7 @@ function App() {
     }
   }
 
-  const handleDownload = () => {
+  const handleDownload = (): void => {
     if (outputText) {
       const blob = new Blob([outputText], { type: 'text/plain' })
       const url = URL.createObjectURL(blob)
