@@ -1,7 +1,5 @@
-import axios, { AxiosError } from 'axios'
-import { RemixType, ClaudeApiResponse, ApiErrorResponse } from '../types'
-
-const API_BASE_URL = import.meta.env.VITE_CLAUDE_API_URL || 'https://api.anthropic.com/v1'
+import Anthropic from '@anthropic-ai/sdk'
+import { RemixType } from '../types'
 
 const REMIX_PROMPTS: Record<RemixType, string> = {
   summarize: "Please summarize the following content in a concise and clear way, highlighting the key points:",
@@ -12,39 +10,43 @@ const REMIX_PROMPTS: Record<RemixType, string> = {
   casual: "Please rewrite the following content in a casual and conversational tone, as if speaking to a friend:"
 }
 
+// Initialize Anthropic client
+const anthropic = new Anthropic({
+  apiKey: import.meta.env.VITE_ANTHROPIC_API_KEY,
+  dangerouslyAllowBrowser: true, // Required for browser environments
+})
+
 export const remixContent = async (content: string, remixType: RemixType): Promise<string> => {
   try {
     const prompt = `${REMIX_PROMPTS[remixType]}\n\n${content}`
     
-    const response = await axios.post<ClaudeApiResponse>(`${API_BASE_URL}/messages`, {
-      model: 'claude-3-sonnet-20240229',
-      max_tokens: 1000,
-      messages: [
-        {
-          role: 'user',
-          content: prompt
-        }
-      ]
-    }, {
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': import.meta.env.VITE_CLAUDE_API_KEY,
-        'anthropic-version': '2023-06-01'
-      }
+    const message = await anthropic.messages.create({
+      model: "claude-sonnet-4-5", // Using the latest Claude Sonnet model
+      max_tokens: 1024,
+      messages: [{ 
+        role: "user", 
+        content: prompt 
+      }],
     })
 
-    return response.data.content[0].text
+    // Extract text content from the response
+    const textContent = message.content.find(block => block.type === 'text')
+    if (!textContent || textContent.type !== 'text') {
+      throw new Error('No text content received from Claude')
+    }
+
+    return textContent.text
   } catch (error) {
-    console.error('API Error:', error)
+    console.error('Anthropic API Error:', error)
     
-    const axiosError = error as AxiosError<ApiErrorResponse>
-    
-    if (axiosError.response?.status === 401) {
-      throw new Error('Invalid API key. Please check your Claude API key.')
-    } else if (axiosError.response?.status === 429) {
-      throw new Error('Rate limit exceeded. Please try again later.')
-    } else if (axiosError.response?.data?.error) {
-      throw new Error(axiosError.response.data.error.message || 'API Error occurred')
+    if (error instanceof Anthropic.APIError) {
+      if (error.status === 401) {
+        throw new Error('Invalid API key. Please check your Anthropic API key.')
+      } else if (error.status === 429) {
+        throw new Error('Rate limit exceeded. Please try again later.')
+      } else {
+        throw new Error(error.message || 'API Error occurred')
+      }
     } else {
       throw new Error('Failed to remix content. Please try again.')
     }
