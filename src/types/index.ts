@@ -1,11 +1,5 @@
 // Remix types for the application
-export type RemixType = 
-  | 'summarize'
-  | 'expand' 
-  | 'simplify'
-  | 'creative'
-  | 'formal'
-  | 'casual'
+export type RemixType = 'tweets'
 
 // Remix type configuration
 export interface RemixTypeConfig {

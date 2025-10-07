@@ -1,14 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { RemixType } from '../types'
 
-const REMIX_PROMPTS: Record<RemixType, string> = {
-  summarize: "Please summarize the following content in a concise and clear way, highlighting the key points:",
-  expand: "Please expand the following content with more detail, examples, and context while maintaining the original meaning:",
-  simplify: "Please simplify the following content to make it easier to understand for a general audience, using simpler language:",
-  creative: "Please rewrite the following content with a creative and engaging style, adding personality and flair:",
-  formal: "Please rewrite the following content in a more formal and professional tone, suitable for business or academic contexts:",
-  casual: "Please rewrite the following content in a casual and conversational tone, as if speaking to a friend:"
-}
+const TWEET_PROMPT = "Create 5 tweets from the following text. Each tweet should be under 280 characters and maintain the tone of the original text. Format each tweet with a number (1., 2., etc.) on a new line:"
 
 // Initialize Anthropic client
 const anthropic = new Anthropic({
@@ -16,9 +9,9 @@ const anthropic = new Anthropic({
   dangerouslyAllowBrowser: true, // Required for browser environments
 })
 
-export const remixContent = async (content: string, remixType: RemixType): Promise<string> => {
+export const remixContent = async (content: string, _remixType: RemixType): Promise<string> => {
   try {
-    const prompt = `${REMIX_PROMPTS[remixType]}\n\n${content}`
+    const prompt = `${TWEET_PROMPT}\n\n${content}`
     
     const message = await anthropic.messages.create({
       model: "claude-sonnet-4-5", // Using the latest Claude Sonnet model
@@ -54,23 +47,20 @@ export const remixContent = async (content: string, remixType: RemixType): Promi
 }
 
 // Mock function for development/testing
-export const mockRemixContent = async (content: string, remixType: RemixType): Promise<string> => {
+export const mockRemixContent = async (content: string, _remixType: RemixType): Promise<string> => {
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 2000))
   
-  const mockResponses: Record<RemixType, string> = {
-    summarize: `Here's a summary of your content:\n\nKey points:\n• ${content.slice(0, 50)}...\n• Main theme: Content transformation\n• Purpose: Information processing\n\nThis summary captures the essential information in a concise format.`,
-    
-    expand: `Here's an expanded version of your content with more detail:\n\nOriginal: ${content}\n\nExpanded with context:\n• Background information that provides additional context\n• Examples that illustrate the main points\n• Related concepts that enhance understanding\n• Detailed explanations that clarify complex ideas\n\nThis expanded version offers comprehensive information while maintaining clarity.`,
-    
-    simplify: `Here's a simplified version:\n\nSimple version: ${content.replace(/complex/g, 'simple').replace(/difficult/g, 'easy').replace(/complicated/g, 'straightforward')}\n\nKey points in simple terms:\n• Easy-to-understand language\n• Clear explanations\n• No jargon or technical terms\n• Straightforward structure\n\nThis version makes the content accessible to everyone.`,
-    
-    creative: `🌟 Here's a creatively rewritten version:\n\n"${content}" ✨\n\nTransformed with creative flair:\n• Engaging storytelling elements\n• Vivid descriptions and imagery\n• Dynamic language that captivates\n• Personality and character that shines through\n\nThis creative version brings your content to life! 🎨`,
-    
-    formal: `Respected content as follows:\n\nProfessional Analysis:\n${content}\n\nFormal presentation includes:\n• Appropriate business terminology\n• Structured professional format\n• Respectful and authoritative tone\n• Clear, concise communication\n\nThis formal version maintains professional standards and credibility.`,
-    
-    casual: `Hey! Here's your content in a more casual way:\n\n"${content}" 😊\n\nCasual breakdown:\n• Friendly, conversational tone\n• Like chatting with a friend\n• Relaxed and approachable\n• Easy-going style\n\nPretty cool, right? This version feels natural and relatable! 👍`
-  }
+  // Generate mock tweets based on the input content
+  const contentPreview = content.slice(0, 100)
   
-  return mockResponses[remixType] || mockResponses.summarize
+  return `1. ${contentPreview}... This is the first tweet that captures the essence of your content in under 280 characters! 🚀
+
+2. Building on the main theme: ${contentPreview.slice(0, 50)}... Here's another perspective on your original text.
+
+3. Key insight from your content: ${contentPreview.slice(0, 60)}... A third tweet that maintains the original tone and message.
+
+4. Final thoughts: ${contentPreview.slice(0, 70)}... This tweet wraps up the key points in a concise format.
+
+5. Summary tweet: ${contentPreview.slice(0, 80)}... The last tweet that ties everything together while staying under the character limit.`
 }
