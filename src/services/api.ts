@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { RemixType } from '../types'
 
-const TWEET_PROMPT = "Create 5 tweets from the following text. Each tweet should be under 280 characters and maintain the tone of the original text. Format each tweet with a number (1., 2., etc.) on a new line:"
+const TWEET_PROMPT = "Create exactly 6 tweets from the following text. Each tweet should be under 280 characters and maintain the tone of the original text. Format each tweet with a number (1., 2., 3., 4., 5., 6.) on a new line. Do not include any additional text or incomplete tweets:"
 
 // Initialize Anthropic client
 const anthropic = new Anthropic({
@@ -62,5 +62,7 @@ export const mockRemixContent = async (content: string, _remixType: RemixType): 
 
 4. Final thoughts: ${contentPreview.slice(0, 70)}... This tweet wraps up the key points in a concise format.
 
-5. Summary tweet: ${contentPreview.slice(0, 80)}... The last tweet that ties everything together while staying under the character limit.`
+5. Summary tweet: ${contentPreview.slice(0, 80)}... The fifth tweet that ties everything together while staying under the character limit.
+
+6. Bonus insight: ${contentPreview.slice(0, 90)}... A sixth tweet that adds extra value and completes your tweet thread.`
 }

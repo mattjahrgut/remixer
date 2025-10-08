@@ -52,6 +52,37 @@ function App(): JSX.Element {
     }
   }
 
+  const handleCopyTweet = (tweet: string): void => {
+    navigator.clipboard.writeText(tweet)
+    console.log('Tweet copied to clipboard!')
+  }
+
+  const handleTweetNow = (tweet: string): void => {
+    // Open Twitter/X with the tweet pre-filled
+    const tweetUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweet)}`
+    window.open(tweetUrl, '_blank')
+  }
+
+  // Parse tweets from output text
+  const parseTweets = (): string[] => {
+    if (!outputText) return []
+    
+    // Split by numbered format (1., 2., etc.) and clean up
+    const lines = outputText.split('\n')
+    const tweets: string[] = []
+    
+    for (const line of lines) {
+      // Match lines that start with a number followed by a period
+      const match = line.match(/^\d+\.\s*(.+)/)
+      if (match) {
+        tweets.push(match[1].trim())
+      }
+    }
+    
+    // Ensure we only return the first 6 tweets to prevent incomplete ones
+    return tweets.slice(0, 6)
+  }
+
   const handleDownload = (): void => {
     if (outputText) {
       const blob = new Blob([outputText], { type: 'text/plain' })
@@ -67,21 +98,21 @@ function App(): JSX.Element {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50">
-      <header className="bg-gradient-to-r from-orange-400 via-amber-400 to-orange-500 shadow-xl border-b-4 border-orange-300">
-        <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-black text-white">
+      <header className="bg-black border-b border-gray-800">
+        <div className="container mx-auto px-4 py-6">
           <div className="flex items-center justify-center space-x-4">
             <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-lg">
-              <span className="text-2xl">🚀</span>
+              <span className="text-2xl">🐦</span>
             </div>
             <div>
-              <h1 className="text-4xl font-black text-white drop-shadow-lg">TweetCraft</h1>
-              <span className="text-sm text-orange-100 bg-white/20 px-3 py-1 rounded-full border border-white/30 backdrop-blur-sm">
+              <h1 className="text-4xl font-black text-white">TweetCraft</h1>
+              <span className="text-sm text-gray-400 bg-gray-800 px-3 py-1 rounded-full border border-gray-700">
                 AI Tweet Generator
               </span>
             </div>
           </div>
-          <p className="text-orange-100 mt-3 text-lg font-medium drop-shadow-md text-center">
+          <p className="text-gray-400 mt-3 text-lg font-medium text-center">
             Transform any content into engaging tweets with the power of AI
           </p>
         </div>
@@ -91,14 +122,14 @@ function App(): JSX.Element {
         <div className="space-y-8">
           {/* Input Section */}
           <div className="space-y-6">
-            <div className="bg-gradient-to-br from-white to-orange-50 rounded-2xl shadow-lg border border-orange-100 overflow-hidden">
-              <div className="px-6 py-4 bg-gradient-to-r from-orange-100 to-amber-100 border-b border-orange-200">
+            <div className="bg-gray-900 rounded-2xl shadow-lg border border-gray-700 overflow-hidden">
+              <div className="px-6 py-4 bg-gray-800 border-b border-gray-700">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <div className="w-3 h-3 bg-orange-400 rounded-full"></div>
-                    <h2 className="font-bold text-orange-900 text-lg">Your Content</h2>
+                    <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                    <h2 className="font-bold text-white text-lg">Your Content</h2>
                   </div>
-                  <span className="text-sm text-orange-700 bg-white px-3 py-1 rounded-full border border-orange-200">
+                  <span className="text-sm text-gray-400 bg-gray-700 px-3 py-1 rounded-full border border-gray-600">
                     {inputText.length} characters
                   </span>
                 </div>
@@ -109,15 +140,15 @@ function App(): JSX.Element {
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
                   placeholder="Paste your content here to transform it into engaging tweets..."
-                  className="w-full h-64 p-4 border-2 border-orange-200 rounded-xl resize-none focus:ring-4 focus:ring-orange-300 focus:border-orange-400 outline-none transition-all duration-200 bg-white/50"
+                  className="w-full h-64 p-4 border-2 border-gray-700 rounded-xl resize-none focus:ring-4 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all duration-200 bg-black text-white placeholder-gray-500"
                 />
               </div>
             </div>
             
-            <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl shadow-lg border border-orange-100 p-6 space-y-6">
+            <div className="bg-gray-900 rounded-2xl shadow-lg border border-gray-700 p-6 space-y-6">
               <div className="text-center">
-                <h3 className="text-lg font-semibold text-orange-900 mb-2">Transform Your Content</h3>
-                <p className="text-sm text-orange-700">Convert any text into 5 engaging tweets</p>
+                <h3 className="text-lg font-semibold text-white mb-2">Transform Your Content</h3>
+                <p className="text-sm text-gray-400">Convert any text into 6 engaging tweets</p>
               </div>
 
               <div className="flex flex-wrap gap-3">
@@ -126,16 +157,16 @@ function App(): JSX.Element {
                   disabled={!inputText.trim() || isLoading}
                   className={`flex-1 px-6 py-3 rounded-xl font-semibold text-white transition-all duration-300 transform ${
                     isLoading 
-                      ? 'bg-gradient-to-r from-orange-400 to-amber-500 animate-pulse scale-95' 
-                      : 'bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl'
-                  } disabled:bg-gray-400 disabled:cursor-not-allowed disabled:transform-none`}
+                      ? 'bg-blue-600 animate-pulse scale-95' 
+                      : 'bg-blue-600 hover:bg-blue-700 hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl'
+                  } disabled:bg-gray-600 disabled:cursor-not-allowed disabled:transform-none`}
                 >
                   {isLoading ? '✨ Crafting Tweets...' : '🚀 Generate Tweets'}
                 </button>
                 
                 <button 
                   onClick={handleClear}
-                  className="px-4 py-3 bg-white border-2 border-orange-200 text-orange-700 rounded-xl font-medium hover:bg-orange-50 hover:border-orange-300 transition-all duration-200"
+                  className="px-4 py-3 bg-gray-700 border-2 border-gray-600 text-gray-300 rounded-xl font-medium hover:bg-gray-600 hover:border-gray-500 transition-all duration-200"
                 >
                   Clear
                 </button>
@@ -145,12 +176,12 @@ function App(): JSX.Element {
           </div>
 
           {/* Output Section */}
-          <div className="bg-gradient-to-br from-teal-50 to-cyan-50 rounded-2xl shadow-lg border border-teal-100 overflow-hidden">
-            <div className="px-6 py-4 bg-gradient-to-r from-teal-100 to-cyan-100 border-b border-teal-200">
+          <div className="bg-gray-900 rounded-2xl shadow-lg border border-gray-700 overflow-hidden">
+            <div className="px-6 py-4 bg-gray-800 border-b border-gray-700">
               <div className="flex items-center space-x-3">
-                <div className="w-3 h-3 bg-teal-400 rounded-full animate-pulse"></div>
-                <h2 className="font-bold text-teal-900 text-lg">✨ Tweet Magic</h2>
-                <span className="text-xs text-teal-700 bg-white px-2 py-1 rounded-full border border-teal-200">
+                <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
+                <h2 className="font-bold text-white text-lg">✨ Tweet Magic</h2>
+                <span className="text-xs text-gray-400 bg-gray-700 px-2 py-1 rounded-full border border-gray-600">
                   AI-Powered
                 </span>
               </div>
@@ -161,47 +192,85 @@ function App(): JSX.Element {
                 <div className="flex items-center justify-center h-80">
                   <div className="text-center space-y-4">
                     <div className="relative">
-                      <div className="h-12 w-12 animate-spin text-teal-500 mx-auto border-4 border-teal-200 border-t-teal-500 rounded-full"></div>
-                      <div className="absolute inset-0 h-12 w-12 animate-ping text-teal-300 mx-auto border-4 border-teal-300 rounded-full opacity-75"></div>
+                      <div className="h-12 w-12 animate-spin text-blue-500 mx-auto border-4 border-gray-600 border-t-blue-500 rounded-full"></div>
+                      <div className="absolute inset-0 h-12 w-12 animate-ping text-blue-400 mx-auto border-4 border-blue-400 rounded-full opacity-75"></div>
                     </div>
                     <div className="space-y-2">
-                      <p className="text-teal-700 font-semibold">✨ Crafting Your Tweets</p>
-                      <p className="text-teal-600 text-sm">AI is working its magic...</p>
+                      <p className="text-gray-300 font-semibold">✨ Crafting Your Tweets</p>
+                      <p className="text-gray-400 text-sm">AI is working its magic...</p>
                     </div>
                   </div>
                 </div>
               ) : error ? (
-                <div className="flex items-start space-x-3 p-6 bg-red-50 border-2 border-red-200 rounded-xl">
-                  <div className="h-6 w-6 text-red-500 mt-0.5 flex-shrink-0">⚠️</div>
+                <div className="flex items-start space-x-3 p-6 bg-red-900/20 border-2 border-red-700 rounded-xl">
+                  <div className="h-6 w-6 text-red-400 mt-0.5 flex-shrink-0">⚠️</div>
                   <div>
-                    <p className="text-red-700 font-semibold">Oops! Something went wrong</p>
-                    <p className="text-red-600 text-sm mt-1">{error}</p>
+                    <p className="text-red-300 font-semibold">Oops! Something went wrong</p>
+                    <p className="text-red-400 text-sm mt-1">{error}</p>
+                  </div>
+                </div>
+              ) : outputText ? (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {parseTweets().map((tweet, index) => (
+                      <div 
+                        key={index}
+                        className="bg-black border-2 border-gray-700 rounded-xl p-4 hover:border-gray-600 hover:shadow-md transition-all duration-200"
+                      >
+                        <div className="flex flex-col gap-3">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-bold text-blue-400 bg-blue-900/30 px-2 py-1 rounded-full">
+                                Tweet {index + 1}
+                              </span>
+                              <span className="text-xs text-gray-400">
+                                {tweet.length} characters
+                              </span>
+                            </div>
+                          </div>
+                          <p className="text-white leading-relaxed whitespace-pre-wrap text-sm">
+                            {tweet}
+                          </p>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleTweetNow(tweet)}
+                              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg font-medium transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm text-sm"
+                              title="Tweet this on X"
+                            >
+                              🐦 Tweet
+                            </button>
+                            <button
+                              onClick={() => handleCopyTweet(tweet)}
+                              className="flex-1 bg-gray-700 hover:bg-gray-600 text-white px-3 py-2 rounded-lg font-medium transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm text-sm"
+                              title="Copy this tweet"
+                            >
+                              📋 Copy
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <div className="flex gap-3 mt-6 pt-4 border-t-2 border-gray-700">
+                    <button
+                      onClick={handleCopy}
+                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-xl font-semibold transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg"
+                    >
+                      📋 Copy All Tweets
+                    </button>
+                    
+                    <button
+                      onClick={handleDownload}
+                      className="flex-1 bg-gray-700 hover:bg-gray-600 text-white px-4 py-3 rounded-xl font-semibold transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg"
+                    >
+                      💾 Download
+                    </button>
                   </div>
                 </div>
               ) : (
-                <textarea
-                  value={outputText}
-                  readOnly
-                  className="w-full h-80 p-4 border-2 border-teal-200 rounded-xl resize-none bg-white/70 text-gray-900 font-mono text-sm leading-relaxed"
-                  placeholder="Your amazing tweets will appear here..."
-                />
-              )}
-              
-              {outputText && (
-                <div className="flex gap-3 mt-4">
-                  <button
-                    onClick={handleCopy}
-                    className="flex-1 bg-gradient-to-r from-teal-500 to-cyan-600 hover:from-teal-600 hover:to-cyan-700 text-white px-4 py-3 rounded-xl font-semibold transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg"
-                  >
-                    📋 Copy Tweets
-                  </button>
-                  
-                  <button
-                    onClick={handleDownload}
-                    className="flex-1 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white px-4 py-3 rounded-xl font-semibold transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg"
-                  >
-                    💾 Download
-                  </button>
+                <div className="flex items-center justify-center h-80 text-gray-400">
+                  <p>Your amazing tweets will appear here...</p>
                 </div>
               )}
             </div>
