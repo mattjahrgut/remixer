@@ -1,7 +1,9 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { RemixType } from '../types'
 
-const TWEET_PROMPT = "Create exactly 6 tweets from the following text. Each tweet should be under 280 characters and maintain the tone of the original text. Format each tweet with a number (1., 2., 3., 4., 5., 6.) on a new line. Do not include any additional text or incomplete tweets:"
+const TWEET_PROMPT = "Create exactly 6 tweets from the following text. CRITICAL: Each tweet MUST be under 280 characters (aim for 270 to be safe). Count carefully before including each tweet. Maintain the tone of the original text. Format each tweet with a number (1., 2., 3., 4., 5., 6.) on a new line. Do not include any additional text or incomplete tweets:"
+
+const TITLE_PROMPT = "Create a catchy, short title (maximum 5 words) for the following content. Respond with ONLY the title, no quotes, no explanation:"
 
 // Initialize Anthropic client
 const anthropic = new Anthropic({
@@ -44,6 +46,40 @@ export const remixContent = async (content: string, _remixType: RemixType): Prom
       throw new Error('Failed to remix content. Please try again.')
     }
   }
+}
+
+// Generate a short title for the content
+export const generateTitle = async (content: string): Promise<string> => {
+  try {
+    const prompt = `${TITLE_PROMPT}\n\n${content}`
+    
+    const message = await anthropic.messages.create({
+      model: "claude-sonnet-4-5",
+      max_tokens: 50,
+      messages: [{ 
+        role: "user", 
+        content: prompt 
+      }],
+    })
+
+    const textContent = message.content.find(block => block.type === 'text')
+    if (!textContent || textContent.type !== 'text') {
+      throw new Error('No text content received from Claude')
+    }
+
+    return textContent.text.trim()
+  } catch (error) {
+    console.error('Error generating title:', error)
+    // Return a default title on error
+    return 'Untitled Content'
+  }
+}
+
+// Mock function for title generation
+export const mockGenerateTitle = async (content: string): Promise<string> => {
+  await new Promise(resolve => setTimeout(resolve, 500))
+  const words = content.split(' ').slice(0, 3).join(' ')
+  return words.length > 30 ? words.slice(0, 30) + '...' : words
 }
 
 // Mock function for development/testing

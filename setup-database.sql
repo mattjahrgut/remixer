@@ -3,7 +3,8 @@ CREATE TABLE IF NOT EXISTS tweets (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   created_at TIMESTAMPTZ DEFAULT now() NOT NULL,
   tweet_text TEXT NOT NULL,
-  original_content TEXT
+  original_content TEXT,
+  title TEXT
 );
 
 -- Create an index on created_at for faster sorting

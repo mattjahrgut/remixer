@@ -11,7 +11,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 /**
  * Save a tweet to the database
  */
-export const saveTweet = async (tweetText: string, originalContent?: string): Promise<SavedTweet | null> => {
+export const saveTweet = async (tweetText: string, originalContent?: string, title?: string): Promise<SavedTweet | null> => {
   try {
     const { data, error } = await supabase
       .from('tweets')
@@ -19,6 +19,7 @@ export const saveTweet = async (tweetText: string, originalContent?: string): Pr
         {
           tweet_text: tweetText,
           original_content: originalContent,
+          title: title,
         },
       ])
       .select()

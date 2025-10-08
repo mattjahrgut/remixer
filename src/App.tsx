@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { remixContent, mockRemixContent } from './services/api'
+import { remixContent, mockRemixContent, generateTitle, mockGenerateTitle } from './services/api'
 import { getSavedTweets, saveTweet, deleteTweet, isSupabaseConfigured } from './services/supabase'
 import { SavedTweet } from './types'
 import SavedTweets from './components/SavedTweets'
@@ -7,6 +7,7 @@ import SavedTweets from './components/SavedTweets'
 function App(): JSX.Element {
   const [inputText, setInputText] = useState<string>('')
   const [outputText, setOutputText] = useState<string>('')
+  const [contentTitle, setContentTitle] = useState<string>('')
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const [error, setError] = useState<string>('')
   const [savedTweets, setSavedTweets] = useState<SavedTweet[]>([])
@@ -30,11 +31,18 @@ function App(): JSX.Element {
       console.log('Using mock API?', useMock)
       console.log('API Key exists?', !!import.meta.env.VITE_ANTHROPIC_API_KEY)
       
-      const result = useMock 
-        ? await mockRemixContent(inputText, 'tweets')
-        : await remixContent(inputText, 'tweets')
+      // Generate tweets and title in parallel for better performance
+      const [result, title] = await Promise.all([
+        useMock 
+          ? mockRemixContent(inputText, 'tweets')
+          : remixContent(inputText, 'tweets'),
+        useMock
+          ? mockGenerateTitle(inputText)
+          : generateTitle(inputText)
+      ])
       
       setOutputText(result)
+      setContentTitle(title)
     } catch (err) {
       // Log the full error for debugging
       console.error('Full error:', err)
@@ -48,6 +56,7 @@ function App(): JSX.Element {
   const handleClear = (): void => {
     setInputText('')
     setOutputText('')
+    setContentTitle('')
     setError('')
   }
 
@@ -92,7 +101,7 @@ function App(): JSX.Element {
       return
     }
 
-    const saved = await saveTweet(tweet, inputText)
+    const saved = await saveTweet(tweet, inputText, contentTitle)
     if (saved) {
       // Add to the beginning of the list
       setSavedTweets(prev => [saved, ...prev])
@@ -121,7 +130,15 @@ function App(): JSX.Element {
       // Match lines that start with a number followed by a period
       const match = line.match(/^\d+\.\s*(.+)/)
       if (match) {
-        tweets.push(match[1].trim())
+        let tweet = match[1].trim()
+        
+        // Enforce 280 character limit - truncate if needed
+        if (tweet.length > 280) {
+          tweet = tweet.substring(0, 277) + '...'
+          console.warn(`Tweet exceeded 280 characters and was truncated: ${tweet.length} chars`)
+        }
+        
+        tweets.push(tweet)
       }
     }
     
@@ -226,10 +243,19 @@ function App(): JSX.Element {
 
               {/* Output Section */}
               <div className="bg-gray-900 rounded-2xl shadow-lg border border-gray-700 overflow-hidden">
-            <div className="px-6 py-4 bg-gray-800 border-b border-gray-700">
-              <div className="flex items-center space-x-3">
-                <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
-                <h2 className="font-bold text-white text-lg">✨ Tweet Magic</h2>
+              <div className="px-6 py-4 bg-gray-800 border-b border-gray-700">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
+                  <h2 className="font-bold text-white text-lg">
+                    ✨ Tweet Magic
+                    {contentTitle && (
+                      <span className="ml-3 text-sm font-normal text-blue-400">
+                        "{contentTitle}"
+                      </span>
+                    )}
+                  </h2>
+                </div>
                 <span className="text-xs text-gray-400 bg-gray-700 px-2 py-1 rounded-full border border-gray-600">
                   AI-Powered
                 </span>
@@ -272,8 +298,8 @@ function App(): JSX.Element {
                                   <span className="text-xs font-bold text-blue-400 bg-blue-900/30 px-2 py-1 rounded-full">
                                     Tweet {index + 1}
                                   </span>
-                                  <span className="text-xs text-gray-400">
-                                    {tweet.length} characters
+                                  <span className={`text-xs ${tweet.length > 280 ? 'text-red-400 font-bold' : tweet.length > 260 ? 'text-yellow-400' : 'text-gray-400'}`}>
+                                    {tweet.length}/280
                                   </span>
                                 </div>
                               </div>

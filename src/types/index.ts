@@ -13,6 +13,7 @@ export interface SavedTweet {
   id?: string
   tweet_text: string
   original_content?: string
+  title?: string
   created_at?: string
 }
 

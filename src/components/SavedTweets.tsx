@@ -64,6 +64,14 @@ function SavedTweets({ tweets, onDelete, onCopy, onTweet, isLoading }: SavedTwee
               className="bg-black border border-gray-700 rounded-xl p-4 hover:border-gray-600 transition-all duration-200"
             >
               <div className="space-y-3">
+                {tweet.title && (
+                  <div className="flex items-center gap-2 pb-2 border-b border-gray-800">
+                    <span className="text-xs font-semibold text-blue-400 bg-blue-900/30 px-2 py-1 rounded-full">
+                      {tweet.title}
+                    </span>
+                  </div>
+                )}
+                
                 <div className="flex items-start justify-between gap-2">
                   <p className="text-white text-sm leading-relaxed flex-1 whitespace-pre-wrap">
                     {tweet.tweet_text}
