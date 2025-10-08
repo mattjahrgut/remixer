@@ -178,6 +178,11 @@ function App(): JSX.Element {
           <p className="text-gray-400 mt-3 text-lg font-medium text-center">
             Transform any content into engaging tweets with the power of AI
           </p>
+          <div className="mt-3 flex justify-center">
+            <p className="text-xs text-yellow-400 bg-yellow-900/20 px-4 py-2 rounded-lg border border-yellow-700/50">
+              ⚠️ Demo app - Please use responsibly
+            </p>
+          </div>
         </div>
       </header>
       
