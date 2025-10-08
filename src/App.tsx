@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { remixContent, mockRemixContent, generateTitle, mockGenerateTitle } from './services/api'
+import { remixContent, mockRemixContent, generateTitle, mockGenerateTitle } from './services/backend-api'
 import { getSavedTweets, saveTweet, deleteTweet, isSupabaseConfigured } from './services/supabase'
 import { SavedTweet } from './types'
 import SavedTweets from './components/SavedTweets'
@@ -29,7 +29,7 @@ function App(): JSX.Element {
       
       // Add debug logging
       console.log('Using mock API?', useMock)
-      console.log('API Key exists?', !!import.meta.env.VITE_ANTHROPIC_API_KEY)
+      console.log('API Key exists?', !!import.meta.env.ANTHROPIC_API_KEY)
       
       // Generate tweets and title in parallel for better performance
       const [result, title] = await Promise.all([
