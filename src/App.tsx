@@ -1,11 +1,17 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { remixContent, mockRemixContent } from './services/api'
+import { getSavedTweets, saveTweet, deleteTweet, isSupabaseConfigured } from './services/supabase'
+import { SavedTweet } from './types'
+import SavedTweets from './components/SavedTweets'
 
 function App(): JSX.Element {
   const [inputText, setInputText] = useState<string>('')
   const [outputText, setOutputText] = useState<string>('')
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const [error, setError] = useState<string>('')
+  const [savedTweets, setSavedTweets] = useState<SavedTweet[]>([])
+  const [isSavedTweetsLoading, setIsSavedTweetsLoading] = useState<boolean>(true)
+  const [dbConfigured, setDbConfigured] = useState<boolean>(false)
 
   const handleRemix = async (): Promise<void> => {
     if (!inputText.trim()) {
@@ -63,6 +69,46 @@ function App(): JSX.Element {
     window.open(tweetUrl, '_blank')
   }
 
+  // Load saved tweets on mount
+  useEffect(() => {
+    const checkConfigAndLoadTweets = async () => {
+      const configured = isSupabaseConfigured()
+      setDbConfigured(configured)
+      
+      if (configured) {
+        const tweets = await getSavedTweets()
+        setSavedTweets(tweets)
+      }
+      setIsSavedTweetsLoading(false)
+    }
+    
+    checkConfigAndLoadTweets()
+  }, [])
+
+  // Save a tweet to the database
+  const handleSaveTweet = async (tweet: string): Promise<void> => {
+    if (!dbConfigured) {
+      console.warn('Database not configured')
+      return
+    }
+
+    const saved = await saveTweet(tweet, inputText)
+    if (saved) {
+      // Add to the beginning of the list
+      setSavedTweets(prev => [saved, ...prev])
+      console.log('Tweet saved!')
+    }
+  }
+
+  // Delete a saved tweet
+  const handleDeleteTweet = async (id: string): Promise<void> => {
+    const success = await deleteTweet(id)
+    if (success) {
+      setSavedTweets(prev => prev.filter(tweet => tweet.id !== id))
+      console.log('Tweet deleted!')
+    }
+  }
+
   // Parse tweets from output text
   const parseTweets = (): string[] => {
     if (!outputText) return []
@@ -118,10 +164,13 @@ function App(): JSX.Element {
         </div>
       </header>
       
-      <main className="container mx-auto px-4 py-8 max-w-4xl">
-        <div className="space-y-8">
-          {/* Input Section */}
-          <div className="space-y-6">
+      <main className="container mx-auto px-4 py-8 max-w-7xl">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Main content area */}
+          <div className="lg:col-span-2">
+            <div className="space-y-8">
+              {/* Input Section */}
+              <div className="space-y-6">
             <div className="bg-gray-900 rounded-2xl shadow-lg border border-gray-700 overflow-hidden">
               <div className="px-6 py-4 bg-gray-800 border-b border-gray-700">
                 <div className="flex items-center justify-between">
@@ -172,11 +221,11 @@ function App(): JSX.Element {
                 </button>
               </div>
 
-            </div>
-          </div>
+                </div>
+              </div>
 
-          {/* Output Section */}
-          <div className="bg-gray-900 rounded-2xl shadow-lg border border-gray-700 overflow-hidden">
+              {/* Output Section */}
+              <div className="bg-gray-900 rounded-2xl shadow-lg border border-gray-700 overflow-hidden">
             <div className="px-6 py-4 bg-gray-800 border-b border-gray-700">
               <div className="flex items-center space-x-3">
                 <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
@@ -187,90 +236,121 @@ function App(): JSX.Element {
               </div>
             </div>
             
-            <div className="p-6">
-              {isLoading ? (
-                <div className="flex items-center justify-center h-80">
-                  <div className="text-center space-y-4">
-                    <div className="relative">
-                      <div className="h-12 w-12 animate-spin text-blue-500 mx-auto border-4 border-gray-600 border-t-blue-500 rounded-full"></div>
-                      <div className="absolute inset-0 h-12 w-12 animate-ping text-blue-400 mx-auto border-4 border-blue-400 rounded-full opacity-75"></div>
-                    </div>
-                    <div className="space-y-2">
-                      <p className="text-gray-300 font-semibold">✨ Crafting Your Tweets</p>
-                      <p className="text-gray-400 text-sm">AI is working its magic...</p>
-                    </div>
-                  </div>
-                </div>
-              ) : error ? (
-                <div className="flex items-start space-x-3 p-6 bg-red-900/20 border-2 border-red-700 rounded-xl">
-                  <div className="h-6 w-6 text-red-400 mt-0.5 flex-shrink-0">⚠️</div>
-                  <div>
-                    <p className="text-red-300 font-semibold">Oops! Something went wrong</p>
-                    <p className="text-red-400 text-sm mt-1">{error}</p>
-                  </div>
-                </div>
-              ) : outputText ? (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {parseTweets().map((tweet, index) => (
-                      <div 
-                        key={index}
-                        className="bg-black border-2 border-gray-700 rounded-xl p-4 hover:border-gray-600 hover:shadow-md transition-all duration-200"
-                      >
-                        <div className="flex flex-col gap-3">
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs font-bold text-blue-400 bg-blue-900/30 px-2 py-1 rounded-full">
-                                Tweet {index + 1}
-                              </span>
-                              <span className="text-xs text-gray-400">
-                                {tweet.length} characters
-                              </span>
-                            </div>
-                          </div>
-                          <p className="text-white leading-relaxed whitespace-pre-wrap text-sm">
-                            {tweet}
-                          </p>
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => handleTweetNow(tweet)}
-                              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg font-medium transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm text-sm"
-                              title="Tweet this on X"
-                            >
-                              🐦 Tweet
-                            </button>
-                            <button
-                              onClick={() => handleCopyTweet(tweet)}
-                              className="flex-1 bg-gray-700 hover:bg-gray-600 text-white px-3 py-2 rounded-lg font-medium transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm text-sm"
-                              title="Copy this tweet"
-                            >
-                              📋 Copy
-                            </button>
-                          </div>
+                <div className="p-6">
+                  {isLoading ? (
+                    <div className="flex items-center justify-center h-80">
+                      <div className="text-center space-y-4">
+                        <div className="relative">
+                          <div className="h-12 w-12 animate-spin text-blue-500 mx-auto border-4 border-gray-600 border-t-blue-500 rounded-full"></div>
+                          <div className="absolute inset-0 h-12 w-12 animate-ping text-blue-400 mx-auto border-4 border-blue-400 rounded-full opacity-75"></div>
+                        </div>
+                        <div className="space-y-2">
+                          <p className="text-gray-300 font-semibold">✨ Crafting Your Tweets</p>
+                          <p className="text-gray-400 text-sm">AI is working its magic...</p>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                  
-                  <div className="flex gap-3 mt-6 pt-4 border-t-2 border-gray-700">
-                    <button
-                      onClick={handleCopy}
-                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-xl font-semibold transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg"
-                    >
-                      📋 Copy All Tweets
-                    </button>
-                    
-                    <button
-                      onClick={handleDownload}
-                      className="flex-1 bg-gray-700 hover:bg-gray-600 text-white px-4 py-3 rounded-xl font-semibold transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg"
-                    >
-                      💾 Download
-                    </button>
-                  </div>
+                    </div>
+                  ) : error ? (
+                    <div className="flex items-start space-x-3 p-6 bg-red-900/20 border-2 border-red-700 rounded-xl">
+                      <div className="h-6 w-6 text-red-400 mt-0.5 flex-shrink-0">⚠️</div>
+                      <div>
+                        <p className="text-red-300 font-semibold">Oops! Something went wrong</p>
+                        <p className="text-red-400 text-sm mt-1">{error}</p>
+                      </div>
+                    </div>
+                  ) : outputText ? (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {parseTweets().map((tweet, index) => (
+                          <div 
+                            key={index}
+                            className="bg-black border-2 border-gray-700 rounded-xl p-4 hover:border-gray-600 hover:shadow-md transition-all duration-200"
+                          >
+                            <div className="flex flex-col gap-3">
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs font-bold text-blue-400 bg-blue-900/30 px-2 py-1 rounded-full">
+                                    Tweet {index + 1}
+                                  </span>
+                                  <span className="text-xs text-gray-400">
+                                    {tweet.length} characters
+                                  </span>
+                                </div>
+                              </div>
+                              <p className="text-white leading-relaxed whitespace-pre-wrap text-sm">
+                                {tweet}
+                              </p>
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => handleTweetNow(tweet)}
+                                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg font-medium transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm text-sm"
+                                  title="Tweet this on X"
+                                >
+                                  🐦 Tweet
+                                </button>
+                                <button
+                                  onClick={() => handleCopyTweet(tweet)}
+                                  className="flex-1 bg-gray-700 hover:bg-gray-600 text-white px-3 py-2 rounded-lg font-medium transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm text-sm"
+                                  title="Copy this tweet"
+                                >
+                                  📋 Copy
+                                </button>
+                                {dbConfigured && (
+                                  <button
+                                    onClick={() => handleSaveTweet(tweet)}
+                                    className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg font-medium transition-all duration-200 hover:scale-105 active:scale-95 shadow-sm text-sm"
+                                    title="Save this tweet"
+                                  >
+                                    💾
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      
+                      <div className="flex gap-3 mt-6 pt-4 border-t-2 border-gray-700">
+                        <button
+                          onClick={handleCopy}
+                          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-xl font-semibold transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg"
+                        >
+                          📋 Copy All Tweets
+                        </button>
+                        
+                        <button
+                          onClick={handleDownload}
+                          className="flex-1 bg-gray-700 hover:bg-gray-600 text-white px-4 py-3 rounded-xl font-semibold transition-all duration-200 hover:scale-105 active:scale-95 shadow-lg"
+                        >
+                          💾 Download
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center h-80 text-gray-400">
+                      <p>Your amazing tweets will appear here...</p>
+                    </div>
+                  )}
                 </div>
-              ) : (
-                <div className="flex items-center justify-center h-80 text-gray-400">
-                  <p>Your amazing tweets will appear here...</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Saved Tweets Sidebar */}
+          <div className="lg:col-span-1">
+            <div className="sticky top-4 h-[calc(100vh-6rem)]">
+              <SavedTweets 
+                tweets={savedTweets}
+                onDelete={handleDeleteTweet}
+                onCopy={handleCopyTweet}
+                onTweet={handleTweetNow}
+                isLoading={isSavedTweetsLoading}
+              />
+              {!dbConfigured && !isSavedTweetsLoading && (
+                <div className="mt-4 p-4 bg-yellow-900/20 border border-yellow-700 rounded-xl">
+                  <p className="text-yellow-300 text-sm">
+                    ⚠️ Database not configured. Add Supabase credentials to enable saving tweets.
+                  </p>
                 </div>
               )}
             </div>

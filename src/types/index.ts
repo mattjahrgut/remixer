@@ -8,6 +8,14 @@ export interface RemixTypeConfig {
   description: string
 }
 
+// Database types
+export interface SavedTweet {
+  id?: string
+  tweet_text: string
+  original_content?: string
+  created_at?: string
+}
+
 // Note: API response types are now handled by the Anthropic SDK
 
 // Component prop types
